@@ -14,34 +14,42 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-api.getAccessToken().then(() => {
-	app.get("/ping", (_, res) => res.send("pong " + Date.now()));
+const startServer = async () => {
+	const token = await api.getAccessToken()
+	if(token) {
+		app.get("/ping", (_, res) => res.send("pong " + Date.now()));
+		
+		app.post("/hook", async (req, res) => {
+			const [ contact ] = req.body.contacts.add
+			const contactCustomFields = contact.custom_fields
+	
+			if(!contactCustomFields) {
+				return logger.error('Отсутсвуют кастомные поля')	
+			}
+	
+			const contactAge = getAge(Number(getFieldValue(contactCustomFields, BIRTHDAY_FIELD_ID)))
+	
+			await api.updateContacts({
+				id: Number(contact.id),
+				custom_fields_values: [
+					{
+						field_id: AGE_FIELD_ID,
+						values: [
+							{
+								value: String(contactAge)
+							}
+						]
+					}
+				]
+			})
+	
+			res.send("OK");
+		});
 
-	app.post("/hook", async ({ body: { contacts: { add } } }, res) => {
-		const contact = add[0]
-		const contactCustomFields = contact.custom_fields
+		app.listen(config.PORT, () => logger.debug("Server started on ", config.PORT));
+	} else {
+		return logger.error('Token absent')
+	}
+}
 
-		if(!contactCustomFields) {
-			return logger.error('Отсутсвуют кастомные поля')	
-		}
-
-		const contactAge = getAge(Number(getFieldValue(contactCustomFields, BIRTHDAY_FIELD_ID)))
-
-		await api.updateContacts({
-			id: Number(contact.id),
-			custom_fields_values: [
-				{
-					field_id: AGE_FIELD_ID,
-					values: [
-						{
-							value: String(contactAge)
-						}
-					]
-				}
-			]
-		})
-
-		res.send("OK");
-	});
-	app.listen(config.PORT, () => logger.debug("Server started on ", config.PORT));
-});
+startServer()
