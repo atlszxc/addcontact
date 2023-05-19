@@ -25,8 +25,7 @@ api.getAccessToken().then(() => {
 			return logger.error('Отсутсвуют кастомные поля')	
 		}
 
-		const birthdayFieldValue = Number(getFieldValue(contactCustomFields, BIRTHDAY_FIELD_ID))
-		const contactAge = getAge(birthdayFieldValue)
+		const contactAge = getAge(Number(getFieldValue(contactCustomFields, BIRTHDAY_FIELD_ID)))
 
 		await api.updateContacts({
 			id: Number(contact.id),
