@@ -28,7 +28,10 @@ const startServer = async () => {
 			}
 	
 			const contactAge = getAge(Number(getFieldValue(contactCustomFields, BIRTHDAY_FIELD_ID)))
-	
+			
+			if(!contactAge) {
+				return logger.error('Некорректное поле даты рождения')
+			}
 			await api.updateContacts({
 				id: Number(contact.id),
 				custom_fields_values: [

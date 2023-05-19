@@ -4,8 +4,6 @@
  *  - общего назначения; 
  */
 
-const fs = require("fs");
-const logger = require("./logger");
 const { TO_MILISECONDS_MULTIPLIER } = require("./const");
 
 /**
@@ -15,10 +13,12 @@ const { TO_MILISECONDS_MULTIPLIER } = require("./const");
  * @returns возвраст контакта
  */
 const getAge = (date) => {
-	if(new Date(date * TO_MILISECONDS_MULTIPLIER) > Date.now()) {
+	const datePerMiliseconds = date * TO_MILISECONDS_MULTIPLIER
+
+	if(new Date(datePerMiliseconds) > Date.now()) {
 		return 0
 	}
-	const [birthDay, birthMonth, birthYear] = new Date(date * 1000).toLocaleDateString().split('.')
+	const [birthDay, birthMonth, birthYear] = new Date(datePerMiliseconds).toLocaleDateString().split('.')
 	const [currentDay, currentMonth, currentYear] = new Date().toLocaleDateString().split('.')
 	let age = currentYear - birthYear
 
