@@ -6,7 +6,8 @@ const express = require("express");
 const api = require("./api");
 const logger = require("./logger");
 const config = require("./config");
-const { age } = require("./helpers");
+const { getAge, getFieldValue } = require("./utils");
+const { BIRTHDAY_FIELD_ID, AGE_FIELD_ID } = require("./const");
 
 const app = express();
 
@@ -17,28 +18,29 @@ api.getAccessToken().then(() => {
 	app.get("/ping", (_, res) => res.send("pong " + Date.now()));
 
 	app.post("/hook", async ({ body: { contacts: { add } } }, res) => {
-		const user = await api.getContact(add[0].id)
-		const values = user.custom_fields_values
-		if(values) {
-			for (const value of values) {
-				if(value.field_name === 'День рождения') {
-					const contactAge = age(value.values[0].value)
-					if(contactAge !== false) {
-						user.custom_fields_values.push({
-							field_id: 47857,
-							values: [
-								{
-									value: String(contactAge)
-								}
-							]
-						})
-				
-						await api.updateContacts({ ...user })
-					}
-					break
-				}
-			}	
+		const contact = add[0]
+		const contactCustomFields = contact.custom_fields
+
+		if(!contactCustomFields) {
+			return logger.error('Отсутсвуют кастомные поля')	
 		}
+
+		const birthdayFieldValue = Number(getFieldValue(contactCustomFields, BIRTHDAY_FIELD_ID))
+		const contactAge = getAge(birthdayFieldValue)
+
+		await api.updateContacts({
+			id: Number(contact.id),
+			custom_fields_values: [
+				{
+					field_id: AGE_FIELD_ID,
+					values: [
+						{
+							value: String(contactAge)
+						}
+					]
+				}
+			]
+		})
 
 		res.send("OK");
 	});
